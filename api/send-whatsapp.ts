@@ -1,29 +1,33 @@
-import { Resend } from 'resend';
+import twilio from "twilio";
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+export default async function handler(req: any, res: any) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const { email, name, amount, receiptId, receiptLink } = req.body;
+    const { phone, name, amount, category, receiptLink } = req.body;
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const client = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
 
-    await resend.emails.send({
-      from: 'onboarding@resend.dev',
-      to: email,
-      subject: 'Donation Receipt',
-      html: `
-        <h2>Thank you ${name} 🙏</h2>
-        <p>Amount: ₹${amount}</p>
-        <p>Receipt ID: ${receiptId}</p>
-        <a href="${receiptLink}">View Receipt</a>
-      `,
+    await client.messages.create({
+      from: process.env.TWILIO_WHATSAPP_NUMBER,
+      to: `whatsapp:${phone}`,
+      body: `🙏 Thank you ${name}
+
+Amount: ₹${amount}
+Category: ${category}
+
+Receipt:
+${receiptLink}`,
     });
 
     return res.status(200).json({ success: true });
-  } catch (err) {
+  } catch (err: any) {
+    console.error("WhatsApp Error:", err);
     return res.status(500).json({ error: err.message });
   }
 }
