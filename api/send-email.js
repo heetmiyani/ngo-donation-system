@@ -1,53 +1,54 @@
 import nodemailer from "nodemailer";
-import PDFDocument from "pdfkit";
+import pdf from "html-pdf-node";
+import { generateReceiptHTML } from "../utils/receiptGenerator";
 
 export default async function handler(req, res) {
   try {
     const { email, name, amount, category, receiptId, receiptLink } = req.body;
 
-    // ✅ Validation
     if (!email || !name || !amount || !receiptId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ✅ Create transporter (MORE RELIABLE THAN service: gmail)
+    // ✅ Create transporter
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
       secure: true,
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS, // App Password
+        pass: process.env.EMAIL_PASS,
       },
     });
 
-    // ✅ Generate PDF (PROMISE BASED - IMPORTANT FIX)
-    const pdfBuffer = await new Promise((resolve, reject) => {
-      const doc = new PDFDocument();
-      const buffers = [];
+    // ✅ Prepare SAME data structure as frontend
+    const donation = {
+      receipt_id: receiptId,
+      donation_date: new Date(),
+      amount,
+      category,
+      notes: "",
+    };
 
-      doc.on("data", (chunk) => buffers.push(chunk));
-      doc.on("end", () => resolve(Buffer.concat(buffers)));
-      doc.on("error", reject);
+    const donor = {
+      name,
+      email,
+      phone: "",
+    };
 
-      // 📄 PDF Content
-      doc.fontSize(20).text("Donation Receipt", { align: "center" });
-      doc.moveDown();
+    // ✅ Generate SAME HTML
+    const html = generateReceiptHTML(donation, donor);
 
-      doc.fontSize(12).text(`Receipt ID: ${receiptId}`);
-      doc.text(`Name: ${name}`);
-      doc.text(`Amount: ₹${amount}`);
-      doc.text(`Category: ${category}`);
-      doc.moveDown();
+    // ✅ Convert HTML → PDF
+    const file = { content: html };
+    const options = {
+      format: "A4",
+      printBackground: true, // VERY IMPORTANT
+    };
 
-      doc.text("Thank you for your generous contribution!", {
-        align: "center",
-      });
+    const pdfBuffer = await pdf.generatePdf(file, options);
 
-      doc.end();
-    });
-
-    // ✅ Send Email
+    // ✅ Send email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
