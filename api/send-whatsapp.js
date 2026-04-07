@@ -13,7 +13,7 @@ export default async function handler(req, res) {
       process.env.TWILIO_AUTH_TOKEN
     );
 
-    await client.messages.create({
+    const message = await client.messages.create({
       from: process.env.TWILIO_WHATSAPP_NUMBER,
       to: `whatsapp:${phone}`,
       body: `🙏 Thank you ${name}
@@ -25,8 +25,12 @@ Receipt:
 ${receiptLink}`,
     });
 
+    console.log("WHATSAPP SENT:", message.sid);
+
     return res.status(200).json({ success: true });
+
   } catch (err) {
+    console.error("WHATSAPP ERROR:", err);
     return res.status(500).json({ error: err.message });
   }
 }

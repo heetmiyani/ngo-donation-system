@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    await resend.emails.send({
+    const response = await resend.emails.send({
       from: 'onboarding@resend.dev',
       to: email,
       subject: 'Donation Receipt',
@@ -22,8 +22,12 @@ export default async function handler(req, res) {
       `,
     });
 
+    console.log("EMAIL SENT:", response);
+
     return res.status(200).json({ success: true });
+
   } catch (err) {
+    console.error("EMAIL ERROR:", err);
     return res.status(500).json({ error: err.message });
   }
 }
