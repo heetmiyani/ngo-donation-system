@@ -180,23 +180,6 @@ export function DonationForm({ onSuccess }: DonationFormProps) {
           }),
         });
       }
-      // WHATSAPP
-      if (phone) {
-        await fetch('/api/send-whatsapp', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            phone,
-            name,
-            amount,
-            category,
-            receiptId,
-            receiptLink,
-          }),
-        });
-      }
       setName('');
       setPhone('');
       setEmail('');
