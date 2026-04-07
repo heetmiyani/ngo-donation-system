@@ -11,11 +11,13 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^143.0.4",
     "@supabase/supabase-js": "^2.57.4",
     "lucide-react": "^0.344.0",
     "nodemailer": "^8.0.4",
     "pdfkit": "^0.18.0",
     "puppeteer": "^24.40.0",
+    "puppeteer-core": "^24.40.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "resend": "^6.10.0",

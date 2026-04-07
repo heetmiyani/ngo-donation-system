@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { generateReceiptPDF } from "../../utils/generateReceiptPDF";
+import { generateReceiptPDF } from "../utils/generateReceiptPDF";
 
 export default async function handler(req, res) {
   try {
