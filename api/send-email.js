@@ -1,16 +1,17 @@
 import nodemailer from "nodemailer";
 import pdf from "html-pdf-node";
-import { generateReceiptHTML } from "../utils/receiptGenerator";
+import { generateReceiptHTML } from "../utils/receiptTemplate";
 
 export default async function handler(req, res) {
   try {
     const { email, name, amount, category, receiptId, receiptLink } = req.body;
 
+    // ✅ Validation
     if (!email || !name || !amount || !receiptId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ✅ Create transporter
+    // ✅ Email transporter (DO NOT REMOVE)
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -21,29 +22,27 @@ export default async function handler(req, res) {
       },
     });
 
-    // ✅ Prepare SAME data structure as frontend
+    // ✅ Prepare data
     const donation = {
       receipt_id: receiptId,
       donation_date: new Date(),
       amount,
       category,
-      notes: "",
     };
 
     const donor = {
       name,
       email,
-      phone: "",
     };
 
-    // ✅ Generate SAME HTML
+    // ✅ Generate HTML (same design)
     const html = generateReceiptHTML(donation, donor);
 
     // ✅ Convert HTML → PDF
     const file = { content: html };
     const options = {
       format: "A4",
-      printBackground: true, // VERY IMPORTANT
+      printBackground: true,
     };
 
     const pdfBuffer = await pdf.generatePdf(file, options);
@@ -85,7 +84,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true });
 
   } catch (err) {
-    console.error("FULL EMAIL ERROR:", err);
+    console.error("EMAIL ERROR:", err);
 
     return res.status(500).json({
       error: err.message,
