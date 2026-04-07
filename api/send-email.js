@@ -1,17 +1,15 @@
 import nodemailer from "nodemailer";
-import pdf from "html-pdf-node";
-import { generateReceiptHTML } from "../utils/receiptTemplate";
+import PDFDocument from "pdfkit";
 
 export default async function handler(req, res) {
   try {
-    const { email, name, amount, category, receiptId, receiptLink } = req.body;
+    const { email, name, amount, category, receiptId } = req.body;
 
-    // ✅ Validation
     if (!email || !name || !amount || !receiptId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ✅ Email transporter (DO NOT REMOVE)
+    // ✅ Transporter
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -22,57 +20,64 @@ export default async function handler(req, res) {
       },
     });
 
-    // ✅ Prepare data
-    const donation = {
-      receipt_id: receiptId,
-      donation_date: new Date(),
-      amount,
-      category,
-    };
+    // ✅ Generate Styled PDF (PDFKit - SAFE)
+    const pdfBuffer = await new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 40 });
+      const buffers = [];
 
-    const donor = {
-      name,
-      email,
-    };
+      doc.on("data", buffers.push.bind(buffers));
+      doc.on("end", () => resolve(Buffer.concat(buffers)));
+      doc.on("error", reject);
 
-    // ✅ Generate HTML (same design)
-    const html = generateReceiptHTML(donation, donor);
+      // 🎨 HEADER
+      doc
+        .fontSize(22)
+        .fillColor("#10b981")
+        .text("DONATION RECEIPT", { align: "center" });
 
-    // ✅ Convert HTML → PDF
-    const file = { content: html };
-    const options = {
-      format: "A4",
-      printBackground: true,
-    };
+      doc.moveDown();
 
-    const pdfBuffer = await pdf.generatePdf(file, options);
+      // 📄 Receipt Box
+      doc
+        .rect(40, 100, 500, 250)
+        .stroke("#10b981");
+
+      doc.moveDown(2);
+
+      doc.fontSize(12).fillColor("black");
+
+      doc.text(`Receipt ID: ${receiptId}`);
+      doc.text(`Name: ${name}`);
+      doc.text(`Email: ${email}`);
+      doc.text(`Category: ${category}`);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`);
+
+      doc.moveDown();
+
+      // 💰 Amount Highlight
+      doc
+        .fontSize(20)
+        .fillColor("#10b981")
+        .text(`₹${amount}`, { align: "center" });
+
+      doc.moveDown();
+
+      doc
+        .fontSize(14)
+        .fillColor("black")
+        .text("Thank you for your support ❤️", {
+          align: "center",
+        });
+
+      doc.end();
+    });
 
     // ✅ Send email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
       subject: `Donation Receipt - ${receiptId}`,
-      html: `
-        <div style="font-family: Arial; padding: 20px;">
-          <h2>🙏 Thank You ${name}</h2>
-          <p>Your donation has been successfully received.</p>
-
-          <table style="margin-top:10px;">
-            <tr><td><strong>Amount:</strong></td><td>₹${amount}</td></tr>
-            <tr><td><strong>Category:</strong></td><td>${category}</td></tr>
-            <tr><td><strong>Receipt ID:</strong></td><td>${receiptId}</td></tr>
-          </table>
-
-          <br/>
-
-          <a href="${receiptLink}" 
-             style="padding: 10px 15px; background: #2563eb; color: white; text-decoration: none; border-radius: 5px;">
-             Download Receipt
-          </a>
-
-          <p style="margin-top:20px;">We truly appreciate your support ❤️</p>
-        </div>
-      `,
+      text: `Hi ${name}, your donation receipt is attached.`,
       attachments: [
         {
           filename: `receipt-${receiptId}.pdf`,
@@ -84,7 +89,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true });
 
   } catch (err) {
-    console.error("EMAIL ERROR:", err);
+    console.error("FINAL ERROR:", err);
 
     return res.status(500).json({
       error: err.message,
