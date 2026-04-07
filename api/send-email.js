@@ -1,82 +1,43 @@
 import nodemailer from "nodemailer";
-import PDFDocument from "pdfkit";
+import { generateReceiptPDF } from "../../utils/generateReceiptPDF";
 
 export default async function handler(req, res) {
   try {
-    const { email, name, amount, category, receiptId, receiptLink } = req.body;
+    const { name, email, amount } = req.body;
 
-    // ✅ Create transporter
+    // 1. Generate PDF
+    const pdfBuffer = await generateReceiptPDF({
+      name,
+      email,
+      amount,
+    });
+
+    // 2. Setup transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS, // App Password
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD,
       },
     });
 
-    // ✅ Generate PDF
-    const doc = new PDFDocument();
-    let buffers = [];
-
-    doc.on("data", buffers.push.bind(buffers));
-    doc.on("end", async () => {
-      const pdfData = Buffer.concat(buffers);
-
-      // ✅ Send Email
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: `Donation Receipt - ${receiptId}`,
-        html: `
-          <div style="font-family: Arial; padding: 20px;">
-            <h2>🙏 Thank You ${name}</h2>
-            <p>Your donation has been successfully received.</p>
-
-            <table style="margin-top:10px;">
-              <tr><td><strong>Amount:</strong></td><td>₹${amount}</td></tr>
-              <tr><td><strong>Category:</strong></td><td>${category}</td></tr>
-              <tr><td><strong>Receipt ID:</strong></td><td>${receiptId}</td></tr>
-            </table>
-
-            <br/>
-
-            <a href="${receiptLink}" 
-               style="padding: 10px 15px; background: #2563eb; color: white; text-decoration: none; border-radius: 5px;">
-               Download Receipt
-            </a>
-
-            <p style="margin-top:20px;">We truly appreciate your support ❤️</p>
-          </div>
-        `,
-        attachments: [
-          {
-            filename: `receipt-${receiptId}.pdf`,
-            content: pdfData,
-          },
-        ],
-      });
-
-      return res.status(200).json({ success: true });
+    // 3. Send email with attachment
+    await transporter.sendMail({
+      from: process.env.EMAIL,
+      to: email,
+      subject: "Donation Receipt",
+      text: `Hi ${name},\n\nThank you for your donation of ₹${amount}. Please find your receipt attached.\n\nRegards,\nTeam`,
+      attachments: [
+        {
+          filename: "receipt.pdf",
+          content: pdfBuffer,
+        },
+      ],
     });
 
-    // ✅ PDF Content
-    doc.fontSize(20).text("Donation Receipt", { align: "center" });
-    doc.moveDown();
-
-    doc.fontSize(12).text(`Receipt ID: ${receiptId}`);
-    doc.text(`Name: ${name}`);
-    doc.text(`Amount: ₹${amount}`);
-    doc.text(`Category: ${category}`);
-    doc.moveDown();
-
-    doc.text("Thank you for your generous contribution!", {
-      align: "center",
-    });
-
-    doc.end();
-
-  } catch (err) {
-    console.error("EMAIL ERROR:", err);
-    res.status(500).json({ error: err.message });
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Email error:", error);
+    return res.status(500).json({ error: "Failed to send email" });
   }
 }
