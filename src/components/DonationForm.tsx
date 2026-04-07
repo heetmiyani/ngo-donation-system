@@ -162,7 +162,41 @@ export function DonationForm({ onSuccess }: DonationFormProps) {
       if (donationError) throw donationError;
 
       setSuccess(`Donation recorded successfully! Receipt ID: ${receiptId}`);
-
+      const receiptLink = `${window.location.origin}/receipt/${receiptId}`;
+      // EMAIL
+      if (email) {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            name,
+            amount,
+            category,
+            receiptId,
+            receiptLink,
+          }),
+        });
+      }
+      // WHATSAPP
+      if (phone) {
+        await fetch('/api/send-whatsapp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            phone,
+            name,
+            amount,
+            category,
+            receiptId,
+            receiptLink,
+          }),
+        });
+      }
       setName('');
       setPhone('');
       setEmail('');
