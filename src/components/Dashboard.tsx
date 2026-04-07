@@ -38,7 +38,7 @@ export function Dashboard() {
         supabase.from('donations').select('category, amount'),
       ]);
 
-      const totalAmount = donationsResult.data?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
+      const totalAmount = donationsResult.data?.reduce((sum: number, d: any) => sum + Number(d.amount), 0) || 0;
 
       const categoryBreakdown = {
         'Khichdi Ghar': 0,
@@ -46,7 +46,7 @@ export function Dashboard() {
         'Other': 0,
       };
 
-      categoryResult.data?.forEach((d) => {
+      categoryResult.data?.forEach((d: any) => {
         categoryBreakdown[d.category as keyof typeof categoryBreakdown] += Number(d.amount);
       });
 

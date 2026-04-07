@@ -93,7 +93,7 @@ export function DonationForm({ onSuccess }: DonationFormProps) {
             .update({
               phone: phone || null,
               email: email || null,
-            })
+            }as any)
             .eq('id', donorId);
 
           if (updateError) throw updateError;
@@ -107,7 +107,7 @@ export function DonationForm({ onSuccess }: DonationFormProps) {
             .select('*')
             .eq('phone', phone)
             .maybeSingle();
-          existingDonor = data;
+          existingDonor = data as Donor | null;
         }
 
         if (!existingDonor && name) {
@@ -116,7 +116,7 @@ export function DonationForm({ onSuccess }: DonationFormProps) {
             .select('*')
             .ilike('name', name)
             .maybeSingle();
-          existingDonor = data;
+          existingDonor = data as Donor | null;
         }
 
         if (existingDonor) {
@@ -127,7 +127,7 @@ export function DonationForm({ onSuccess }: DonationFormProps) {
             .update({
               phone: phone || existingDonor.phone,
               email: email || existingDonor.email,
-            })
+            }as any)
             .eq('id', donorId);
 
           if (updateError) throw updateError;
@@ -138,12 +138,12 @@ export function DonationForm({ onSuccess }: DonationFormProps) {
               name: name.trim(),
               phone: phone || null,
               email: email || null,
-            })
+            }as any)
             .select()
             .single();
-
+          
           if (donorError) throw donorError;
-          donorId = newDonor.id;
+          donorId = (newDonor as any).id;
         }
       }
 
@@ -157,7 +157,7 @@ export function DonationForm({ onSuccess }: DonationFormProps) {
           category,
           receipt_id: receiptId,
           notes: notes || null,
-        });
+        }as any);
 
       if (donationError) throw donationError;
 
