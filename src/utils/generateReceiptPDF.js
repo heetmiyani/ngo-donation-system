@@ -1,15 +1,6 @@
-import chromium from "@sparticuz/chromium";
-import puppeteer from "puppeteer-core";
+import pdf from "html-pdf-node";
 
 export async function generateReceiptPDF(data) {
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    executablePath: await chromium.executablePath(),
-    headless: true,
-  });
-
-  const page = await browser.newPage();
-
   const html = `
     <html>
       <body>
@@ -22,9 +13,9 @@ export async function generateReceiptPDF(data) {
     </html>
   `;
 
-  await page.setContent(html);
-  const pdfBuffer = await page.pdf({ format: "A4" });
+  const file = { content: html };
+  const options = { format: "A4" };
 
-  await browser.close();
+  const pdfBuffer = await pdf.generatePdf(file, options);
   return pdfBuffer;
 }
