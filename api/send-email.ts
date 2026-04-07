@@ -1,26 +1,25 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-export default async function handler(req, res) {
+export async function POST(req: Request) {
   try {
-    const { email, name, amount, category, receiptId } = req.body;
+    const { email, name, amount, category, receiptId, receiptLink } = await req.json();
 
-    const response = await resend.emails.send({
-      from: 'NGO <onboarding@resend.dev>',
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
+    await resend.emails.send({
+      from: 'onboarding@resend.dev',
       to: email,
       subject: 'Donation Receipt',
       html: `
-        <h2>Thank you, ${name} 🙏</h2>
-        <p>We received your donation.</p>
-        <p><b>Amount:</b> ₹${amount}</p>
-        <p><b>Category:</b> ${category}</p>
-        <p><b>Receipt ID:</b> ${receiptId}</p>
+        <h2>Thank you ${name} 🙏</h2>
+        <p>Amount: ₹${amount}</p>
+        <p>Receipt ID: ${receiptId}</p>
+        <a href="${receiptLink}">View Receipt</a>
       `,
     });
 
-    res.status(200).json({ success: true, response });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 }

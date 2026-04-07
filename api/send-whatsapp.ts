@@ -1,27 +1,28 @@
 import twilio from 'twilio';
 
-const client = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
-
-export default async function handler(req, res) {
+export async function POST(req: Request) {
   try {
-    const { phone, name, amount, category, receiptId } = req.body;
+    const { phone, name, amount, category, receiptLink } = await req.json();
 
-    const message = await client.messages.create({
+    const client = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+
+    await client.messages.create({
       from: process.env.TWILIO_WHATSAPP_NUMBER,
       to: `whatsapp:${phone}`,
-      body: `🙏 Thank you ${name}!
+      body: `🙏 Thank you ${name}
 
-Donation Received:
 Amount: ₹${amount}
 Category: ${category}
-Receipt ID: ${receiptId}`,
+
+Receipt:
+${receiptLink}`,
     });
 
-    res.status(200).json({ success: true, message });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 }
