@@ -165,7 +165,7 @@ export function DonationForm({ onSuccess }: DonationFormProps) {
       const receiptLink = `${window.location.origin}/receipt/${receiptId}`;
       // EMAIL
       if (email) {
-        await fetch('/api/send-email', {
+        await fetch('/api/send-email.ts', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ export function DonationForm({ onSuccess }: DonationFormProps) {
       }
       // WHATSAPP
       if (phone) {
-        await fetch('/api/send-whatsapp', {
+        await fetch('/api/send-whatsapp.ts', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
