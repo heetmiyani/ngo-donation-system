@@ -1,21 +1,24 @@
-import { Resend } from 'resend';
+import twilio from 'twilio';
 
 export async function POST(req: Request) {
   try {
-    const { email, name, amount, category, receiptId, receiptLink } = await req.json();
+    const { phone, name, amount, category, receiptLink } = await req.json();
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const client = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
 
-    await resend.emails.send({
-      from: 'onboarding@resend.dev',
-      to: email,
-      subject: 'Donation Receipt',
-      html: `
-        <h2>Thank you ${name} 🙏</h2>
-        <p>Amount: ₹${amount}</p>
-        <p>Receipt ID: ${receiptId}</p>
-        <a href="${receiptLink}">View Receipt</a>
-      `,
+    await client.messages.create({
+      from: process.env.TWILIO_WHATSAPP_NUMBER,
+      to: `whatsapp:${phone}`,
+      body: `🙏 Thank you ${name}
+
+Amount: ₹${amount}
+Category: ${category}
+
+Receipt:
+${receiptLink}`,
     });
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
